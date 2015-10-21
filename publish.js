@@ -205,13 +205,38 @@ function getPathFromDoclet(doclet) {
         doclet.meta.filename;
 }
 
-function generate(type, title, docs, filename, resolveLinks) {
+function addConfToObj(obj, conf) {
+	if (!obj.conf) { obj.conf = {} }
+	Object.keys(conf).forEach(function (confKey) {
+		obj.conf[confKey] = conf[confKey];
+	});
+}
+
+function addConfToDocs(docs, conf) {
+	if (!conf) { return docs; }
+	docs.forEach(function (doc) {
+		addConfToObj(doc, conf);
+		if (doc.params) {
+			doc.params.forEach(function (param) {
+				addConfToObj(param, conf);
+				if (param.subparams) {
+					param.subparams.forEach(function (subparam) {
+						addConfToObj(subparam, conf);
+					});
+				}
+			});
+		}
+	});
+	return docs;
+}
+
+function generate(type, title, docs, filename, resolveLinks, conf) {
     resolveLinks = resolveLinks === false ? false : true;
 
     var docData = {
         type: type,
         title: title,
-        docs: docs
+        docs: addConfToDocs(docs, conf)
     };
 
     var outpath = path.join(outdir, filename),
@@ -598,36 +623,42 @@ exports.publish = function(taffyData, opts, tutorials) {
     var mixins = taffy(members.mixins);
     var externals = taffy(members.externals);
     var interfaces = taffy(members.interfaces);
+	
+	function generateWithConf() {
+		var args = Array.from(arguments);
+		args[5] = conf;
+		generate.apply(undefined, args);
+	}
 
     Object.keys(helper.longnameToUrl).forEach(function(longname) {
-        var myModules = helper.find(modules, {longname: longname});
-        if (myModules.length) {
-            generate('Module', myModules[0].name, myModules, helper.longnameToUrl[longname]);
+		var myModules = helper.find(modules, {longname: longname});
+		if (myModules.length) {
+            generateWithConf('Module', myModules[0].name, myModules, helper.longnameToUrl[longname]);
         }
 
         var myClasses = helper.find(classes, {longname: longname});
         if (myClasses.length) {
-            generate('Class', myClasses[0].name, myClasses, helper.longnameToUrl[longname]);
+            generateWithConf('Class', myClasses[0].name, myClasses, helper.longnameToUrl[longname]);
         }
 
         var myNamespaces = helper.find(namespaces, {longname: longname});
         if (myNamespaces.length) {
-            generate('Namespace', myNamespaces[0].name, myNamespaces, helper.longnameToUrl[longname]);
+            generateWithConf('Namespace', myNamespaces[0].name, myNamespaces, helper.longnameToUrl[longname]);
         }
 
         var myMixins = helper.find(mixins, {longname: longname});
         if (myMixins.length) {
-            generate('Mixin', myMixins[0].name, myMixins, helper.longnameToUrl[longname]);
+            generateWithConf('Mixin', myMixins[0].name, myMixins, helper.longnameToUrl[longname]);
         }
 
         var myExternals = helper.find(externals, {longname: longname});
         if (myExternals.length) {
-            generate('External', myExternals[0].name, myExternals, helper.longnameToUrl[longname]);
+            generateWithConf('External', myExternals[0].name, myExternals, helper.longnameToUrl[longname]);
         }
 
         var myInterfaces = helper.find(interfaces, {longname: longname});
         if (myInterfaces.length) {
-            generate('Interface', myInterfaces[0].name, myInterfaces, helper.longnameToUrl[longname]);
+            generateWithConf('Interface', myInterfaces[0].name, myInterfaces, helper.longnameToUrl[longname]);
         }
     });
 

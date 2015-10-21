@@ -113,11 +113,20 @@
                 </td>
             <?js } ?>
 
-            <td class="description last"><?js= param.description ?><?js if (param.subparams) { ?>
-                <h6>Properties</h6>
-                <?js= self.partial('params.tmpl', param.subparams) ?>
-            <?js } ?></td>
+			<td class="description last"><?js= param.description ?><?js if (param.subparams) { ?>
+				<?js if (!param.conf.compactParameters) { ?>
+					<h6>Properties</h6>
+					<?js= self.partial('params.tmpl', param.subparams) ?>
+				<?js } ?>
+			<?js } ?></td>
         </tr>
+
+		<?js if (param.subparams && param.conf.compactParameters) { ?>
+			<tr><td class="compactParameters" colspan="4">
+				<h6>Properties</h6>
+				<?js= self.partial('params.tmpl', param.subparams) ?>
+			</td></tr>
+		<?js } ?>
 
     <?js }); ?>
     </tbody>
